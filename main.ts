@@ -1,25 +1,30 @@
-// A working gta6-meme-x-01 entry (Node 22, standard library only): it copies POST.json from the repository root to
-// /output/POST.json, where the gate reads it. That is all the program has to do. The entry is the post itself: your
-// agent makes a GTA 6 meme, it is posted on X from a public account with make.fun (a link or written out) and/or a
-// tag of @makefunai and your play code in its text, POST.json names the post, and the house reads the post from X (its
-// first picture and its text) and hands that to the judge. Nothing this program writes about the post is judged.
+// gta6-meme-x-01 entrypoint (Node 22, stdlib only).
 //
-// The POST.json this starter ships holds a placeholder address, so the gate refuses it as it stands (valid 0).
-// Replace it with your post's address before you submit.
+// The entry itself is the X post: the meme picture and the post text are
+// what the house reads from X and hands to the judge. This program does
+// exactly one job — hand the post's address to the grader by copying the
+// repository's POST.json into the output directory.
 //
-// Outside the grader's container, MAKEFUN_BOT_DIR and MAKEFUN_OUTPUT_DIR stand in for /bot and /output:
+// POST.json still holds the placeholder address until the meme is posted
+// and the real post URL is filled in; with the placeholder the gate
+// refuses the entry, which is the correct behaviour before posting.
+//
+// Locally, /bot and /output are stood in for by environment variables:
 //   mkdir -p out && MAKEFUN_BOT_DIR=. MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const BOT_DIR = process.env.MAKEFUN_BOT_DIR ?? '/bot';
-const OUTPUT_DIR = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+const repoRoot = process.env.MAKEFUN_BOT_DIR ?? '/bot';
+const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 
-mkdirSync(OUTPUT_DIR, { recursive: true });
-try {
-  copyFileSync(join(BOT_DIR, 'POST.json'), join(OUTPUT_DIR, 'POST.json'));
-} catch (err) {
-  console.error(`POST.json could not be copied from ${BOT_DIR}: ${(err as Error).message}`);
+const source = join(repoRoot, 'POST.json');
+const target = join(outDir, 'POST.json');
+
+if (!existsSync(source)) {
+  console.error(`No POST.json found in ${repoRoot}; nothing to hand in.`);
   process.exit(1);
 }
+
+mkdirSync(outDir, { recursive: true });
+writeFileSync(target, readFileSync(source));
